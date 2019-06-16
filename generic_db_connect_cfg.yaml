@@ -1,0 +1,5 @@
+host: '127.0.0.1'
+port: 8888
+user: 'user'
+db: 'some_db'
+password: 'should_not_be_plaintext'
