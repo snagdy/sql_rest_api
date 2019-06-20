@@ -9,7 +9,7 @@ with open('db_connect_cfg.yaml', 'r') as file:
 def db_context_manager(func):
     def wrapper(*args, **kwargs):
         try:
-            with pymysql.connect(**db_context_dict) as conn:
+            with pymysql.connect(**db_context_dict, cursorclass=pymysql.cursors.DictCursor) as conn:
                 db_response = func(conn, *args, **kwargs)
                 return db_response
         except Exception:
@@ -38,6 +38,12 @@ def transaction(cursor, transaction_type, sql_string):
         raise Exception('{0} and commit unsuccessful, rollback initiated.'.format(transaction_type))
 
 
+def display_results(query_response_generator):
+    # TODO: Make results possible to display as JSON via optional argument.
+    for row in query_response_generator:
+        print(row)
+
+
 @db_context_manager
 def db_table_insert(conn, insert_string):
     cursor = conn
@@ -56,4 +62,7 @@ def db_table_update(conn, update_string):
     transaction(cursor, 'UPDATE', update_string)
 
 
-print(db_table_read('SHOW TABLES;'))
+display_results(db_table_read('SHOW DATABASES;'))
+display_results(db_table_read('SHOW TABLES;'))
+display_results(db_table_read('SELECT * FROM testdb.daily_data;'))
+
