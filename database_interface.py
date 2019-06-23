@@ -62,7 +62,7 @@ def db_table_update(conn, update_string):
     transaction(cursor, 'UPDATE', update_string)
 
 
-display_results(db_table_read('SHOW DATABASES;'))
-display_results(db_table_read('SHOW TABLES;'))
-display_results(db_table_read('SELECT * FROM testdb.daily_data;'))
+# display_results(db_table_read('SHOW DATABASES;'))
+# display_results(db_table_read('SHOW TABLES;'))
+# display_results(db_table_read('SELECT * FROM testdb.daily_data;'))
 
