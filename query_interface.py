@@ -2,10 +2,13 @@ import database_interface as db_api
 import simplejson as json
 import pprint as pp
 import nest_local as nest
+
+
 from datetime import date, datetime
+from typing import *
 
 
-def json_serial(obj):
+def json_serial(obj: Any) -> str:
     """JSON serializer for objects not serializable by default json code"""
 
     if isinstance(obj, (datetime, date)):
@@ -13,15 +16,16 @@ def json_serial(obj):
     raise TypeError("Type %s not serializable" % type(obj))
 
 
-def select_query(field_list, database, table,
-                 condition_expression=None,
-                 aggregator_list=None,
-                 group_by_list=None,
-                 order_by_list=None,
-                 order_by_direction=None,
-                 return_as_json=False):
+def select_query(field_list: List[str], database: str, table: str,
+                 condition_expression: Optional[str]=None,
+                 aggregator_list: Optional[List[str]]=None,
+                 group_by_list: Optional[List[str]]=None,
+                 order_by_list: Optional[List[str]]=None,
+                 order_by_direction: Optional[str]=None,
+                 return_as_json: Optional[bool]=False) -> str:
+
     database_and_table_string = '.'.join((database, table))
-    field_list_string = ', '.join(field_list)
+    field_list_string = ','.join(field_list)
 
     # constructs the basic query string with or without and aggregator function.
     if aggregator_list is None:
@@ -41,12 +45,12 @@ def select_query(field_list, database, table,
 
     # if an aggregator function is called, checks for a group by list and appends grouping hierarchy.
     if group_by_list is not None and aggregator_list is not None:
-        group_by_string = ', '.join(group_by_list)
+        group_by_string = ','.join(group_by_list)
         query_string += ' GROUP BY {}'.format(group_by_string)
 
     # if an order by list exists, then adds grouping hierarchy to order response by.
     if order_by_list is not None:
-        order_by_string = ', '.join(order_by_list)
+        order_by_string = ','.join(order_by_list)
         query_string += ' ORDER BY {}'.format(order_by_string)
 
     # if an order by direction is specified, then it is applied.
@@ -60,6 +64,37 @@ def select_query(field_list, database, table,
         return json.dumps(db_api.db_table_read(query_string), iterable_as_array=True, default=json_serial)
     else:
         return db_api.db_table_read(query_string)
+
+
+def insert_statement(fields_values_dict: Dict[str, str], database: str, table: str) -> None:
+    columns = fields_values_dict.keys()
+    values = fields_values_dict.values()
+    columns_str = ','.join(col for col in columns)
+    values_str = ','.join(val for val in values)
+    insert_string = 'INSERT INTO {}.{} ({}) VALUES ({});'.format(table, database, columns_str, values_str)
+    db_api.db_table_insert(insert_string)
+
+
+def delete_statement(database: str, table: str, condition_expression: Optional[str]=None) -> None:
+    delete_string = 'DELETE FROM {}.{}'.format(table, database)
+    if condition_expression is not None:
+        delete_string += 'WHERE {};'
+    else:
+        delete_string += ';'
+    db_api.db_table_delete(delete_string)
+
+
+def update_statement(fields_values_dict: Dict[str, str], database: str, table: str,
+                     conditional_expression: Optional[str]=None) -> None:
+
+    update_pairs = ('{} = {}'.format(col, val) for col, val in fields_values_dict.items())
+    update_pairs_string = ','.join(update_pairs)
+    update_string = 'UPDATE {}.{} SET {}'.format(table, database, update_pairs_string)
+    if conditional_expression is not None:
+        update_string += 'WHERE {};'
+    else:
+        update_string += ';'
+    db_api.db_table_update(update_string)
 
 
 # print(select_query(['MERCHANT', 'TRANSACTED_VALUE'], 'testdb', 'daily_data', aggregator_list=[None, 'SUM'], condition_expression='TRANSACTED_VALUE >50000', group_by_list=['MERCHANT']))
